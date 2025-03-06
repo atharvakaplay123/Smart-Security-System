@@ -46,11 +46,10 @@ void setup() {
   digitalWrite(BUZZER, LOW);
   digitalWrite(Relay_pin, LOW);
 
-
   WiFi.mode(WIFI_STA);
   WiFiMulti.addAP("Vijay_Jio", "Kaplay@108");
   WiFiMulti.addAP("Atharva_Kaplay", "Kaplay@108");
-  while (WiFiMulti.run() != WL_CONNECTED || sim_stat() == false) {
+  while (WiFiMulti.run() != WL_CONNECTED) {
     digitalWrite(LED_G, LOW);
     digitalWrite(LED_R, HIGH);
     delay(100);
@@ -64,6 +63,21 @@ void setup() {
 
 void loop() {
   /////////////////////////////////////////////////////////////////////////////////////////////
+  //*********************************scaning connectivity status*********************************
+  if (WiFiMulti.run() != WL_CONNECTED) {
+    while (WiFiMulti.run() != WL_CONNECTED) {
+      digitalWrite(LED_G, LOW);
+      digitalWrite(LED_R, HIGH);
+      delay(100);
+      digitalWrite(LED_R, LOW);
+      delay(100);
+    }
+    if (WiFiMulti.run() == WL_CONNECTED) {
+      digitalWrite(LED_R, LOW);
+      digitalWrite(LED_G, HIGH);
+    }
+  }
+  /////////////////////////////////////////////////////////////////////////////////////////////
   /* Initialize MFRC522 Module */
   mfrc522.PCD_Init();
   /* Look for new cards */
@@ -76,21 +90,6 @@ void loop() {
     return;
   }
   /////////////////////////////////////////////////////////////////////////////////////////////
-  //*********************************scaning connectivity status*********************************
-  if (WiFiMulti.run() != WL_CONNECTED || sim_stat() == false) {
-    while (WiFiMulti.run() != WL_CONNECTED || sim_stat() == false) {
-      digitalWrite(LED_G, LOW);
-      digitalWrite(LED_R, HIGH);
-      delay(100);
-      digitalWrite(LED_R, LOW);
-      delay(100);
-    }
-    if (WiFiMulti.run() == WL_CONNECTED && sim_stat() == true) {
-      digitalWrite(LED_R, LOW);
-      digitalWrite(LED_G, HIGH);
-    }
-  }
-  /////////////////////////////////////////////////////////////////////////////////////////////
   //*********************************scaning IR Sensor*********************************
 
   if (digitalRead(IRSENSOR) == 1) {
@@ -100,24 +99,24 @@ void loop() {
   //*********************************scaning RFID*********************************
 
   /* Read data from the same block */
-  // Serial.println();
-  // Serial.println(F("Reading last data from RFID..."));
+  Serial.println();
+  Serial.println(F("Reading last data from RFID..."));
   ReadDataFromBlock(blockNum, readBlockData);
   /* If you want to print the full memory dump, uncomment the next line */
   //mfrc522.PICC_DumpToSerial(&(mfrc522.uid));
 
   /* Print the data read from block */
-  // Serial.println();
-  // Serial.print(F("Last data in RFID:"));
-  // Serial.print(blockNum);
-  // Serial.print(F(" --> "));
+  Serial.println();
+  Serial.print(F("Last data in RFID:"));
+  Serial.print(blockNum);
+  Serial.print(F(" --> "));
   RFID.remove(0, RFID.length());
   int j = 0;
   while (int(readBlockData[j]) > 0) {
     RFID.concat(char(readBlockData[j]));
     j++;
   }
-  // Serial.println(RFID);
+  Serial.println(RFID);
   digitalWrite(BUZZER, HIGH);
   delay(200);
   digitalWrite(BUZZER, LOW);
@@ -138,21 +137,21 @@ void loop() {
 
     data2 = data1 + RFID;
     data2.trim();
-    // Serial.println(data2);
+    Serial.println(data2);
 
     HTTPClient https;
-    // Serial.print(F("[HTTPS] begin...\n"));
+    Serial.print(F("[HTTPS] begin...\n"));
     if (https.begin(*client, (String)data2)) {
       //HTTP
-      // Serial.print(F("[HTTPS] GET...\n"));
-      // start connection and send HTTP header
+      Serial.print(F("[HTTPS] GET...\n"));
+      //start connection and send HTTP header
       int httpCode = https.GET();
 
       // httpCode will be negative on error
       if (httpCode > 0) {
-        // HTTP header has been send and Server response header has been handled
-        // Serial.printf("[HTTPS] GET... code: %d\n", httpCode);
-        // file found at server
+        //HTTP header has been send and Server response header has been handled
+        Serial.printf("[HTTPS] GET... code: %d\n", httpCode);
+        //file found at server
         digitalWrite(LED_G, LOW);
         digitalWrite(LED_R, HIGH);
         delay(200);
@@ -162,14 +161,14 @@ void loop() {
         delay(200);
         digitalWrite(LED_R, LOW);
       } else {
-        // Serial.printf("[HTTPS] GET... failed, error: %s\n", https.errorToString(httpCode).c_str());
+        Serial.printf("[HTTPS] GET... failed, error: %s\n", https.errorToString(httpCode).c_str());
         digitalWrite(LED_G, LOW);
         digitalWrite(LED_R, HIGH);
       }
       https.end();
       delay(1000);
     } else {
-      // Serial.printf("[HTTPS} Unable to connect\n");
+      Serial.printf("[HTTPS} Unable to connect\n");
       digitalWrite(LED_G, LOW);
       digitalWrite(LED_R, HIGH);
     }
