@@ -17,9 +17,6 @@
 #define Relay_pin D8
 
 String RFID;
-bool door_stat = 0;  // door_stat = 1(door is open with valid RFID card), door_stat = 0(door is closed)
-
-
 MFRC522 mfrc522(SS_PIN, RST_PIN);  // Instance of the class
 MFRC522::MIFARE_Key key;
 ESP8266WiFiMulti WiFiMulti;
@@ -38,10 +35,6 @@ const String data1 = "https://script.google.com/macros/s/AKfycbwysfjP_i8Fu2FnF6q
 
 void setup() {
   Serial.begin(9600);
-  // Serial.setDebugOutput(true);
-  // Serial.println();
-  // Serial.println();
-  // Serial.println();
   Serial.println("AT");
   delay(100);
   pinMode(BUZZER, OUTPUT);
@@ -53,11 +46,6 @@ void setup() {
   digitalWrite(BUZZER, LOW);
   digitalWrite(Relay_pin, LOW);
 
-  // for (uint8_t t = 4; t > 0; t--) {
-  //   Serial.printf("[SETUP] WAIT %d...\n", t);
-  //   Serial.flush();
-  //   delay(1000);
-  // }
 
   WiFi.mode(WIFI_STA);
   WiFiMulti.addAP("Vijay_Jio", "Kaplay@108");
@@ -69,14 +57,26 @@ void setup() {
     digitalWrite(LED_R, LOW);
     delay(100);
   }
-  if (WiFiMulti.run() == WL_CONNECTED && sim_stat() == true) {
-    digitalWrite(LED_R, LOW);
-    digitalWrite(LED_G, HIGH);
-  }
+  digitalWrite(LED_R, LOW);
+  digitalWrite(LED_G, HIGH);
   SPI.begin();
 }
 
 void loop() {
+  /////////////////////////////////////////////////////////////////////////////////////////////
+  /* Initialize MFRC522 Module */
+  mfrc522.PCD_Init();
+  /* Look for new cards */
+  /* Reset the loop if no new card is present on RC522 Reader */
+  if (!mfrc522.PICC_IsNewCardPresent()) {
+    return;
+  }
+  /* Select one of the cards */
+  if (!mfrc522.PICC_ReadCardSerial()) {
+    return;
+  }
+  /////////////////////////////////////////////////////////////////////////////////////////////
+  //*********************************scaning connectivity status*********************************
   if (WiFiMulti.run() != WL_CONNECTED || sim_stat() == false) {
     while (WiFiMulti.run() != WL_CONNECTED || sim_stat() == false) {
       digitalWrite(LED_G, LOW);
@@ -90,22 +90,15 @@ void loop() {
       digitalWrite(LED_G, HIGH);
     }
   }
-  
+  /////////////////////////////////////////////////////////////////////////////////////////////
+  //*********************************scaning IR Sensor*********************************
+
   if (digitalRead(IRSENSOR) == 1) {
     Warning();
   }
   /////////////////////////////////////////////////////////////////////////////////////////////
-  /* Initialize MFRC522 Module */
-  mfrc522.PCD_Init();
-  /* Look for new cards */
-  /* Reset the loop if no new card is present on RC522 Reader */
-  if (!mfrc522.PICC_IsNewCardPresent()) {
-    return;
-  }
-  /* Select one of the cards */
-  if (!mfrc522.PICC_ReadCardSerial()) {
-    return;
-  }
+  //*********************************scaning RFID*********************************
+
   /* Read data from the same block */
   // Serial.println();
   // Serial.println(F("Reading last data from RFID..."));
@@ -125,7 +118,6 @@ void loop() {
     j++;
   }
   // Serial.println(RFID);
-  door_stat == 1;
   digitalWrite(BUZZER, HIGH);
   delay(200);
   digitalWrite(BUZZER, LOW);
@@ -134,7 +126,8 @@ void loop() {
   delay(200);
   digitalWrite(BUZZER, LOW);
   digitalWrite(LED_G, LOW);
-
+  /////////////////////////////////////////////////////////////////////////////////////////////
+  //*********************************sending data to spreadsheet*********************************
 
   if ((WiFiMulti.run() == WL_CONNECTED)) {
     std::unique_ptr<BearSSL::WiFiClientSecure> client(new BearSSL::WiFiClientSecure);
@@ -181,13 +174,12 @@ void loop() {
       digitalWrite(LED_R, HIGH);
     }
   }
-  int a = digitalRead(IRSENSOR);
-  if (a == 1) {
-    while (a == 1) {
-      digitalWrite(LED_G, LOW);
-      digitalWrite(Relay_pin, HIGH);
-      a = digitalRead(IRSENSOR);
-    }
+  /////////////////////////////////////////////////////////////////////////////////////////////
+  //*********************************unlocking the door lock*********************************
+  digitalWrite(Relay_pin, HIGH);
+  while (digitalRead(IRSENSOR) == 1) {
+    digitalWrite(LED_G, LOW);
+    digitalWrite(Relay_pin, LOW);
   }
   digitalWrite(LED_G, HIGH);
   digitalWrite(Relay_pin, LOW);
