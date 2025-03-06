@@ -23,13 +23,6 @@ void Warning() {
   int val = digitalRead(IRSENSOR);
   int state = 0;
   (val == 1) ? (state = 1) : (state = 0);
-  // int state = 0;
-  // int old_val = 0;
-  // if (val == HIGH && old_val == LOW) {
-  //   state = 1 - state;
-  //   delay(10);
-  // }
-  // old_val = val;
   if (state == 1) {
     digitalWrite(LED_G, LOW);
     digitalWrite(LED_R, HIGH);

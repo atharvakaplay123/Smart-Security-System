@@ -186,17 +186,6 @@ void loop() {
     while (a == 1) {
       digitalWrite(LED_G, LOW);
       digitalWrite(Relay_pin, HIGH);
-      // digitalWrite(LED_R, HIGH);
-      // digitalWrite(BUZZER, HIGH);
-      // delay(200);
-      // digitalWrite(LED_R, LOW);
-      // digitalWrite(BUZZER, LOW);
-      // delay(200);
-      // digitalWrite(LED_R, HIGH);
-      // digitalWrite(BUZZER, HIGH);
-      // delay(200);
-      // digitalWrite(LED_R, LOW);
-      // digitalWrite(BUZZER, LOW);
       a = digitalRead(IRSENSOR);
     }
   }
