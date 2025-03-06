@@ -11,7 +11,7 @@
 #define SS_PIN D4
 
 #define BUZZER D2
-#define IRSENSOR A0
+//A0 is IRSENSOR pin
 #define LED_R D1
 #define LED_G D0
 #define Relay_pin D8
@@ -35,13 +35,13 @@ const String data1 = "https://script.google.com/macros/s/AKfycbwysfjP_i8Fu2FnF6q
 
 void setup() {
   Serial.begin(9600);
-  Serial.println("AT");
+  Serial.write("AT");
   delay(100);
   pinMode(BUZZER, OUTPUT);
   pinMode(LED_R, OUTPUT);
   pinMode(LED_G, OUTPUT);
   pinMode(Relay_pin, OUTPUT);
-  pinMode(IRSENSOR, INPUT);
+  //  pinMode(IRSENSOR, INPUT); // A0 is irsensor pin
 
   digitalWrite(BUZZER, LOW);
   digitalWrite(Relay_pin, LOW);
@@ -78,6 +78,12 @@ void loop() {
     }
   }
   /////////////////////////////////////////////////////////////////////////////////////////////
+  //*********************************scaning IR Sensor*********************************
+
+  if (analogRead(A0) >= 500) {
+    Warning();
+  }
+  /////////////////////////////////////////////////////////////////////////////////////////////
   /* Initialize MFRC522 Module */
   mfrc522.PCD_Init();
   /* Look for new cards */
@@ -90,33 +96,27 @@ void loop() {
     return;
   }
   /////////////////////////////////////////////////////////////////////////////////////////////
-  //*********************************scaning IR Sensor*********************************
-
-  if (digitalRead(IRSENSOR) == 1) {
-    Warning();
-  }
-  /////////////////////////////////////////////////////////////////////////////////////////////
   //*********************************scaning RFID*********************************
 
   /* Read data from the same block */
-  Serial.println();
-  Serial.println(F("Reading last data from RFID..."));
+  // Serial.println();
+  // Serial.println(F("Reading last data from RFID..."));
   ReadDataFromBlock(blockNum, readBlockData);
   /* If you want to print the full memory dump, uncomment the next line */
   //mfrc522.PICC_DumpToSerial(&(mfrc522.uid));
 
   /* Print the data read from block */
-  Serial.println();
-  Serial.print(F("Last data in RFID:"));
-  Serial.print(blockNum);
-  Serial.print(F(" --> "));
+  // Serial.println();
+  // Serial.print(F("Last data in RFID:"));
+  // Serial.print(blockNum);
+  // Serial.print(F(" --> "));
   RFID.remove(0, RFID.length());
   int j = 0;
   while (int(readBlockData[j]) > 0) {
     RFID.concat(char(readBlockData[j]));
     j++;
   }
-  Serial.println(RFID);
+  //Serial.println(RFID);
   digitalWrite(BUZZER, HIGH);
   delay(200);
   digitalWrite(BUZZER, LOW);
@@ -137,20 +137,20 @@ void loop() {
 
     data2 = data1 + RFID;
     data2.trim();
-    Serial.println(data2);
+    //Serial.println(data2);
 
     HTTPClient https;
-    Serial.print(F("[HTTPS] begin...\n"));
+    // Serial.print(F("[HTTPS] begin...\n"));
     if (https.begin(*client, (String)data2)) {
       //HTTP
-      Serial.print(F("[HTTPS] GET...\n"));
+      //Serial.print(F("[HTTPS] GET...\n"));
       //start connection and send HTTP header
       int httpCode = https.GET();
 
       // httpCode will be negative on error
       if (httpCode > 0) {
         //HTTP header has been send and Server response header has been handled
-        Serial.printf("[HTTPS] GET... code: %d\n", httpCode);
+        //Serial.printf("[HTTPS] GET... code: %d\n", httpCode);
         //file found at server
         digitalWrite(LED_G, LOW);
         digitalWrite(LED_R, HIGH);
@@ -161,14 +161,14 @@ void loop() {
         delay(200);
         digitalWrite(LED_R, LOW);
       } else {
-        Serial.printf("[HTTPS] GET... failed, error: %s\n", https.errorToString(httpCode).c_str());
+        //Serial.printf("[HTTPS] GET... failed, error: %s\n", https.errorToString(httpCode).c_str());
         digitalWrite(LED_G, LOW);
         digitalWrite(LED_R, HIGH);
       }
       https.end();
-      delay(1000);
+      delay(500);
     } else {
-      Serial.printf("[HTTPS} Unable to connect\n");
+      //Serial.printf("[HTTPS} Unable to connect\n");
       digitalWrite(LED_G, LOW);
       digitalWrite(LED_R, HIGH);
     }
@@ -176,10 +176,21 @@ void loop() {
   /////////////////////////////////////////////////////////////////////////////////////////////
   //*********************************unlocking the door lock*********************************
   digitalWrite(Relay_pin, HIGH);
-  while (digitalRead(IRSENSOR) == 1) {
-    digitalWrite(LED_G, LOW);
+  delay(5000);
+  while (analogRead(A0) >= 500) {
     digitalWrite(Relay_pin, LOW);
+    digitalWrite(LED_G, LOW);
+    digitalWrite(BUZZER, LOW);
+    delay(2000);
+    digitalWrite(LED_G, HIGH);
+    digitalWrite(BUZZER, HIGH);
+    delay(200);
+    digitalWrite(LED_G, LOW);
+    digitalWrite(BUZZER, LOW);
+    delay(2000);
+    //Serial.println("Door open");
   }
+  //Serial.println("Door close");
   digitalWrite(LED_G, HIGH);
   digitalWrite(Relay_pin, LOW);
 }
