@@ -5,7 +5,7 @@ void Warning() {
     digitalWrite(LED_G, LOW);
     digitalWrite(LED_R, HIGH);
 
-    Serial.println("ATD+ +919406867350;");
+    Serial.println("ATD+ +91your phone number;");
     delay(15000);         // wait for 15 seconds...
     Serial.println("ATH");  //hang up
     delay(1000);
@@ -15,7 +15,7 @@ void Warning() {
     delay(500);
 
     // Set recipient phone number and message
-    Serial.println("AT+CMGS=\"+919406867350\"\r");
+    Serial.println("AT+CMGS=\"+91your phone number\"\r");
     delay(500);
 
     // Send the message text
